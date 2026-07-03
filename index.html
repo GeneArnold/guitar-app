@@ -469,14 +469,6 @@ body {
   min-width: 120px;
 }
 
-.bpm-display {
-  font-family: 'Courier New', monospace;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--fret-gold);
-  min-width: 60px;
-  text-align: center;
-}
 
 /* Play Position Picker */
 .play-pos-row {
@@ -517,26 +509,59 @@ body {
   border-color: var(--rosewood);
 }
 
-/* Play Diagram */
+/* Play Diagram — 3-chord preview */
 .play-diagram {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 160px;
+  align-items: flex-end;
+  gap: 4px;
+  min-height: 140px;
   margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.play-diagram .diagram-slot {
+  display: flex;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.play-diagram .diagram-slot.prev,
+.play-diagram .diagram-slot.next {
+  opacity: 0.35;
+  transform: scale(0.82);
+  transform-origin: bottom center;
+}
+
+.play-diagram .diagram-slot.current {
+  opacity: 1;
 }
 
 .play-diagram .chord-card {
-  max-width: 180px;
-  min-width: 150px;
   box-shadow: none;
   background: transparent;
+  padding: 8px 4px 4px;
+  min-width: 0;
 }
 
-.play-diagram .chord-label { font-size: 26px; }
-.play-diagram .chord-degree { font-size: 14px; }
-.play-diagram .chord-diagram { max-width: 160px; }
-.play-diagram .difficulty-tag { font-size: 11px; }
+.play-diagram .diagram-slot.current .chord-card {
+  max-width: 160px;
+  min-width: 130px;
+}
+
+.play-diagram .diagram-slot.prev .chord-card,
+.play-diagram .diagram-slot.next .chord-card {
+  max-width: 110px;
+  min-width: 90px;
+}
+
+.play-diagram .chord-label { font-size: 22px; }
+.play-diagram .diagram-slot.current .chord-label { font-size: 26px; }
+.play-diagram .chord-degree { font-size: 12px; }
+.play-diagram .chord-diagram { max-width: 140px; }
+.play-diagram .diagram-slot.prev .chord-diagram,
+.play-diagram .diagram-slot.next .chord-diagram { max-width: 100px; }
+.play-diagram .difficulty-tag { font-size: 10px; }
 
 /* Highway Play Display */
 .play-display {
@@ -946,7 +971,7 @@ body {
       <div class="bpm-control">
         <label style="font-size:14px;color:var(--string);font-weight:600;">BPM</label>
         <input type="range" id="bpm-slider" min="40" max="200" value="80">
-        <div class="bpm-display" id="bpm-display">80</div>
+        <input type="number" id="bpm-input" min="40" max="200" value="80" style="width:60px;padding:6px 8px;border:2px solid var(--maple);border-radius:8px;font-size:18px;font-weight:700;font-family:'Courier New',monospace;color:var(--fret-gold);background:var(--card);text-align:center;min-height:40px;">
       </div>
     </div>
     <div class="play-controls">
@@ -961,7 +986,9 @@ body {
           <option value="8">8</option>
         </select>
       </div>
-      <button class="play-btn start" id="play-start-btn" onclick="togglePlayAlong()">Start</button>
+      <button class="play-btn start" id="play-start-btn" onclick="startPlayAlong()">Start</button>
+      <button class="play-btn stop" id="play-pause-btn" onclick="pausePlayAlong()" style="display:none;padding:14px 20px;">Pause</button>
+      <button class="play-btn stop" id="play-stop-btn" onclick="stopPlayAlong()" style="display:none;padding:14px 20px;">Stop</button>
     </div>
     <div class="play-pos-row" id="play-pos-row" style="display:none;"></div>
     <div class="play-diagram" id="play-diagram" style="display:none;"></div>
@@ -1577,7 +1604,12 @@ function initPlaySelects() {
 
   document.getElementById('bpm-slider').oninput = function() {
     state.bpm = parseInt(this.value);
-    document.getElementById('bpm-display').textContent = state.bpm;
+    document.getElementById('bpm-input').value = state.bpm;
+  };
+  document.getElementById('bpm-input').oninput = function() {
+    const v = Math.max(40, Math.min(200, parseInt(this.value) || 80));
+    state.bpm = v;
+    document.getElementById('bpm-slider').value = v;
   };
 }
 
@@ -1600,13 +1632,6 @@ function playClick(time, accent) {
   osc.start(time); osc.stop(time + 0.08);
 }
 
-function togglePlayAlong() {
-  if (state.playing) {
-    stopPlayAlong();
-  } else {
-    startPlayAlong();
-  }
-}
 
 async function startPlayAlong() {
   const pIdx = parseInt(document.getElementById('play-prog').value);
@@ -1665,29 +1690,59 @@ async function startPlayAlong() {
   // Show diagram area
   document.getElementById('play-diagram').style.display = 'flex';
 
+  // Track random positions per chord so next-chord preview stays consistent
+  let randomPosMap = {};
+
+  function getPosForChord(chordIdx) {
+    if (!state.playRandomPos) return state.playPosIdx;
+    if (randomPosMap[chordIdx] === undefined) {
+      randomPosMap[chordIdx] = Math.floor(Math.random() * numPos);
+    }
+    return randomPosMap[chordIdx];
+  }
+
   function updatePlayDiagram(chordIdx, force) {
     if (!force && chordIdx === state.playLastDiagramChord) return;
     state.playLastDiagramChord = chordIdx;
+
+    // On chord change in random mode, clear future positions so they re-randomize
+    if (state.playRandomPos && !force) {
+      const nextIdx = (chordIdx + 1) % chords.length;
+      delete randomPosMap[nextIdx];
+    }
+
     const container = document.getElementById('play-diagram');
     container.innerHTML = '';
 
-    let posIdx = state.playPosIdx;
-    if (state.playRandomPos) {
-      posIdx = Math.floor(Math.random() * numPos);
-      state.playPosIdx = posIdx;
-    }
+    const prevIdx = (chordIdx - 1 + chords.length) % chords.length;
+    const nextIdx = (chordIdx + 1) % chords.length;
 
-    const pos = playPositions[posIdx];
-    if (!pos || !pos.chords[chordIdx]) return;
-    const ch = pos.chords[chordIdx];
-    renderChord(container, ch.name, ch.degree, ch.voicing);
+    const slots = [
+      { idx: prevIdx, cls: 'prev' },
+      { idx: chordIdx, cls: 'current' },
+      { idx: nextIdx, cls: 'next' },
+    ];
+
+    slots.forEach(({idx, cls}) => {
+      const slot = document.createElement('div');
+      slot.className = 'diagram-slot ' + cls;
+      const posIdx = getPosForChord(idx);
+      const pos = playPositions[posIdx];
+      if (pos && pos.chords[idx]) {
+        const ch = pos.chords[idx];
+        renderChord(slot, ch.name, ch.degree, ch.voicing);
+      }
+      container.appendChild(slot);
+    });
   }
 
   updatePlayDiagram(0, true);
+  // Pre-seed next chord's random position so preview shows it
+  if (state.playRandomPos) getPosForChord(1);
 
-  const btn = document.getElementById('play-start-btn');
-  btn.textContent = 'Stop';
-  btn.className = 'play-btn stop';
+  document.getElementById('play-start-btn').style.display = 'none';
+  document.getElementById('play-pause-btn').style.display = '';
+  document.getElementById('play-stop-btn').style.display = '';
 
   document.getElementById('play-idle').style.display = 'none';
   document.getElementById('play-stats').style.display = 'flex';
@@ -1848,15 +1903,43 @@ async function startPlayAlong() {
   state.playRaf = requestAnimationFrame(drawHighway);
 }
 
+function pausePlayAlong() {
+  if (!state.playing) return;
+  state.playing = false;
+  state.playPaused = true;
+  if (state.playRaf) cancelAnimationFrame(state.playRaf);
+  state.playRaf = null;
+  const pauseBtn = document.getElementById('play-pause-btn');
+  pauseBtn.textContent = 'Resume';
+  pauseBtn.onclick = resumePlayAlong;
+}
+
+function resumePlayAlong() {
+  if (!state.playPaused) return;
+  state.playing = true;
+  state.playPaused = false;
+  const pauseBtn = document.getElementById('play-pause-btn');
+  pauseBtn.textContent = 'Pause';
+  pauseBtn.onclick = pausePlayAlong;
+  // Restart will be handled by re-calling startPlayAlong with current settings
+  // For simplicity, just restart fresh
+  stopPlayAlong();
+  startPlayAlong();
+}
+
 function stopPlayAlong() {
   state.playing = false;
+  state.playPaused = false;
   if (state.playInterval) clearInterval(state.playInterval);
   if (state.playRaf) cancelAnimationFrame(state.playRaf);
   state.playInterval = null;
   state.playRaf = null;
-  const btn = document.getElementById('play-start-btn');
-  btn.textContent = 'Start';
-  btn.className = 'play-btn start';
+  document.getElementById('play-start-btn').style.display = '';
+  document.getElementById('play-pause-btn').style.display = 'none';
+  document.getElementById('play-stop-btn').style.display = 'none';
+  const pauseBtn = document.getElementById('play-pause-btn');
+  pauseBtn.textContent = 'Pause';
+  pauseBtn.onclick = pausePlayAlong;
   document.getElementById('play-idle').style.display = 'flex';
   document.getElementById('play-stats').style.display = 'none';
   document.getElementById('play-pos-row').style.display = 'none';
