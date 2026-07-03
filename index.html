@@ -825,6 +825,28 @@ body {
   <!-- LEARN TAB -->
   <section id="learn-tab" class="tab-content active">
     <p class="section-sub">Choose a progression, then a key to see chord shapes at 5 positions across the neck.</p>
+    <details style="margin-bottom:20px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:0;">
+      <summary style="padding:14px 18px;cursor:pointer;font-weight:700;color:var(--rosewood);font-size:15px;list-style:none;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:18px;">&#9432;</span> What do the Roman numerals mean?
+      </summary>
+      <div style="padding:4px 18px 18px;font-size:14px;line-height:1.7;color:var(--ink);">
+        <p style="margin-bottom:10px;">Roman numerals number the chords in a key. <strong>Uppercase = Major (bright)</strong>, <strong>lowercase = minor (darker)</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px;">
+          <thead><tr style="text-align:left;border-bottom:2px solid var(--maple);">
+            <th style="padding:6px 8px;">#</th><th style="padding:6px 8px;">Numeral</th><th style="padding:6px 8px;">Type</th><th style="padding:6px 8px;">In key of G</th><th style="padding:6px 8px;">Feel</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding:5px 8px;">1</td><td style="padding:5px 8px;font-weight:700;">I</td><td style="padding:5px 8px;">Major</td><td style="padding:5px 8px;">G</td><td style="padding:5px 8px;color:var(--string);">Home base</td></tr>
+            <tr style="background:rgba(0,0,0,0.02);"><td style="padding:5px 8px;">2</td><td style="padding:5px 8px;font-weight:700;">ii</td><td style="padding:5px 8px;">minor</td><td style="padding:5px 8px;">Am</td><td style="padding:5px 8px;color:var(--string);">Stepping stone</td></tr>
+            <tr><td style="padding:5px 8px;">3</td><td style="padding:5px 8px;font-weight:700;">iii</td><td style="padding:5px 8px;">minor</td><td style="padding:5px 8px;">Bm</td><td style="padding:5px 8px;color:var(--string);">Moody</td></tr>
+            <tr style="background:rgba(0,0,0,0.02);"><td style="padding:5px 8px;">4</td><td style="padding:5px 8px;font-weight:700;">IV</td><td style="padding:5px 8px;">Major</td><td style="padding:5px 8px;">C</td><td style="padding:5px 8px;color:var(--string);">The lift</td></tr>
+            <tr><td style="padding:5px 8px;">5</td><td style="padding:5px 8px;font-weight:700;">V</td><td style="padding:5px 8px;">Major</td><td style="padding:5px 8px;">D</td><td style="padding:5px 8px;color:var(--string);">Tension / wants to resolve</td></tr>
+            <tr style="background:rgba(0,0,0,0.02);"><td style="padding:5px 8px;">6</td><td style="padding:5px 8px;font-weight:700;">vi</td><td style="padding:5px 8px;">minor</td><td style="padding:5px 8px;">Em</td><td style="padding:5px 8px;color:var(--string);">The emotional one</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--string);font-size:13px;">The chord names change with the key, but the <em>pattern</em> stays the same. I-V-vi-IV always feels like "home, tension, sad, lift" no matter what key you play it in.</p>
+      </div>
+    </details>
     <div class="prog-grid" id="prog-grid"></div>
     <div id="learn-detail" style="display:none;">
       <div class="prog-info" id="prog-info"></div>
@@ -1642,10 +1664,12 @@ async function startPlayAlong() {
       ctx2d.textBaseline = 'middle';
       ctx2d.fillText(chords[ci], x + chordW / 2, H / 2 - 16);
 
-      // Roman numeral
-      ctx2d.fillStyle = isPast ? 'rgba(255,255,255,0.15)' : isCurrent ? 'rgba(201,151,62,0.9)' : 'rgba(255,255,255,0.3)';
-      ctx2d.font = `${isCurrent ? '15px' : '13px'} system-ui, sans-serif`;
-      ctx2d.fillText(degrees[ci], x + chordW / 2, H / 2 + 10);
+      // Roman numeral + number
+      const degNum = {I:'1',ii:'2',iii:'3',IV:'4',V:'5',vi:'6',vii:'7'}[degrees[ci]] || '';
+      const degLabel = degrees[ci] + '  (' + degNum + ')';
+      ctx2d.fillStyle = isPast ? 'rgba(255,255,255,0.2)' : isCurrent ? 'rgba(201,151,62,1)' : 'rgba(255,255,255,0.55)';
+      ctx2d.font = `bold ${isCurrent ? '18px' : '15px'} system-ui, sans-serif`;
+      ctx2d.fillText(degLabel, x + chordW / 2, H / 2 + 14);
 
       // Beat dots
       for (let b = 0; b < beatsPerChord; b++) {
