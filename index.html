@@ -478,6 +478,66 @@ body {
   text-align: center;
 }
 
+/* Play Position Picker */
+.play-pos-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  justify-content: center;
+}
+
+.play-pos-btn {
+  padding: 8px 14px;
+  border: 2px solid var(--maple);
+  border-radius: 10px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--string);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 40px;
+}
+
+.play-pos-btn:hover { border-color: var(--fret-gold); }
+.play-pos-btn.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--sand);
+}
+
+.play-pos-btn.random {
+  background: var(--fret-gold);
+  border-color: var(--fret-gold);
+  color: #fff;
+}
+
+.play-pos-btn.random.active {
+  background: var(--rosewood);
+  border-color: var(--rosewood);
+}
+
+/* Play Diagram */
+.play-diagram {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 160px;
+  margin-bottom: 8px;
+}
+
+.play-diagram .chord-card {
+  max-width: 180px;
+  min-width: 150px;
+  box-shadow: none;
+  background: transparent;
+}
+
+.play-diagram .chord-label { font-size: 26px; }
+.play-diagram .chord-degree { font-size: 14px; }
+.play-diagram .chord-diagram { max-width: 160px; }
+.play-diagram .difficulty-tag { font-size: 11px; }
+
 /* Highway Play Display */
 .play-display {
   position: relative;
@@ -490,7 +550,7 @@ body {
 .play-display canvas {
   display: block;
   width: 100%;
-  height: 280px;
+  height: 180px;
   touch-action: none;
 }
 
@@ -903,6 +963,8 @@ body {
       </div>
       <button class="play-btn start" id="play-start-btn" onclick="togglePlayAlong()">Start</button>
     </div>
+    <div class="play-pos-row" id="play-pos-row" style="display:none;"></div>
+    <div class="play-diagram" id="play-diagram" style="display:none;"></div>
     <div class="play-display" id="play-display">
       <canvas id="highway-canvas"></canvas>
       <div class="play-idle-msg" id="play-idle">Press Start to begin</div>
@@ -1562,6 +1624,66 @@ async function startPlayAlong() {
   state.playBeat = 0;
   state.playChordIdx = 0;
   state.playLoop = 1;
+  state.playPosIdx = 0;
+  state.playRandomPos = false;
+  state.playLastDiagramChord = -1;
+
+  // Compute all 5 positions for this progression/key
+  const playPositions = getPositions(prog, key.s);
+  state.playPositions = playPositions;
+
+  // Render position picker
+  const posRow = document.getElementById('play-pos-row');
+  posRow.style.display = 'flex';
+  posRow.innerHTML = '';
+  const numPos = playPositions.length;
+  for (let i = 0; i < numPos; i++) {
+    const pb = document.createElement('button');
+    pb.className = 'play-pos-btn' + (i === 0 ? ' active' : '');
+    pb.textContent = playPositions[i].label || ('Pos ' + (i+1));
+    pb.onclick = () => {
+      state.playPosIdx = i;
+      state.playRandomPos = false;
+      posRow.querySelectorAll('.play-pos-btn').forEach((b,j) => {
+        b.classList.toggle('active', j === i);
+      });
+      updatePlayDiagram(state.playChordIdx, true);
+    };
+    posRow.appendChild(pb);
+  }
+  const randBtn = document.createElement('button');
+  randBtn.className = 'play-pos-btn random';
+  randBtn.textContent = 'Random';
+  randBtn.onclick = () => {
+    state.playRandomPos = true;
+    posRow.querySelectorAll('.play-pos-btn').forEach(b => b.classList.remove('active'));
+    randBtn.classList.add('active');
+    updatePlayDiagram(state.playChordIdx, true);
+  };
+  posRow.appendChild(randBtn);
+
+  // Show diagram area
+  document.getElementById('play-diagram').style.display = 'flex';
+
+  function updatePlayDiagram(chordIdx, force) {
+    if (!force && chordIdx === state.playLastDiagramChord) return;
+    state.playLastDiagramChord = chordIdx;
+    const container = document.getElementById('play-diagram');
+    container.innerHTML = '';
+
+    let posIdx = state.playPosIdx;
+    if (state.playRandomPos) {
+      posIdx = Math.floor(Math.random() * numPos);
+      state.playPosIdx = posIdx;
+    }
+
+    const pos = playPositions[posIdx];
+    if (!pos || !pos.chords[chordIdx]) return;
+    const ch = pos.chords[chordIdx];
+    renderChord(container, ch.name, ch.degree, ch.voicing);
+  }
+
+  updatePlayDiagram(0, true);
 
   const btn = document.getElementById('play-start-btn');
   btn.textContent = 'Stop';
@@ -1574,10 +1696,10 @@ async function startPlayAlong() {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * dpr;
-  canvas.height = 280 * dpr;
+  canvas.height = 180 * dpr;
   const ctx2d = canvas.getContext('2d');
   ctx2d.scale(dpr, dpr);
-  const W = rect.width, H = 280;
+  const W = rect.width, H = 180;
 
   const chordColors = ['#C9973E','#8B3A2F','#4a8c5c','#5b7bb5','#9b6b9e','#c97a3e'];
   const nowX = W * 0.22;
@@ -1608,6 +1730,8 @@ async function startPlayAlong() {
     state.playChordIdx = currentChordIdx;
     state.playBeat = currentBeat;
     state.playLoop = Math.floor(elapsed / (chordDuration * chords.length)) + 1;
+
+    updatePlayDiagram(currentChordIdx);
 
     // Metronome clicks
     const beatsSinceStart = Math.floor(elapsed / beatDuration);
@@ -1735,6 +1859,9 @@ function stopPlayAlong() {
   btn.className = 'play-btn start';
   document.getElementById('play-idle').style.display = 'flex';
   document.getElementById('play-stats').style.display = 'none';
+  document.getElementById('play-pos-row').style.display = 'none';
+  document.getElementById('play-diagram').style.display = 'none';
+  document.getElementById('play-diagram').innerHTML = '';
   const canvas = document.getElementById('highway-canvas');
   if (canvas) {
     const ctx2d = canvas.getContext('2d');
