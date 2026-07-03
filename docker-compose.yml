@@ -1,0 +1,15 @@
+services:
+  guitar-app:
+    build: .
+    container_name: guitar-app
+    restart: unless-stopped
+    ports:
+      - "8070:80"
+    networks:
+      - front
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+
+networks:
+  front:
+    external: true
