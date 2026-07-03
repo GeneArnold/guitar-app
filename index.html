@@ -1724,6 +1724,7 @@ function initTunerStrings() {
       state.tunerString = i;
       document.querySelectorAll('.string-btn').forEach((b, j) => b.classList.toggle('active', j === i));
       updateTunerDisplay();
+      playRefTone();
     };
     container.appendChild(btn);
   });
@@ -1734,25 +1735,59 @@ function updateTunerDisplay() {
   document.getElementById('tuner-freq').textContent = TUNING_FREQ[state.tunerString].toFixed(2) + ' Hz';
 }
 
+let _toneOsc = null;
+let _toneGain = null;
+let _toneTimeout = null;
+
 async function playRefTone() {
+  // Kill any existing tone first
+  if (_toneOsc) {
+    try { _toneOsc.stop(); } catch(e) {}
+    _toneOsc = null;
+  }
+  if (_toneTimeout) { clearTimeout(_toneTimeout); _toneTimeout = null; }
+
   const ctx = await getAudioCtx();
   const freq = TUNING_FREQ[state.tunerString];
+
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.connect(gain); gain.connect(ctx.destination);
-  osc.type = 'sine';
+
+  // Use triangle wave — fuller sound, easier to hear on laptop speakers
+  osc.type = 'triangle';
   osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0.4, ctx.currentTime);
-  gain.gain.setValueAtTime(0.4, ctx.currentTime + 1.5);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+
+  // Also add a quiet octave-up harmonic for presence
+  const osc2 = ctx.createOscillator();
+  const gain2 = ctx.createGain();
+  osc2.type = 'sine';
+  osc2.frequency.value = freq * 2;
+  osc2.connect(gain2);
+  gain2.connect(ctx.destination);
+  gain2.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(0.7, ctx.currentTime);
+  gain.gain.setValueAtTime(0.7, ctx.currentTime + 2);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.5);
+
   osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 2.5);
-  document.getElementById('tuner-status').textContent = `Playing ${TUNING_NAMES[state.tunerString]}...`;
-  document.getElementById('tuner-status').className = 'tuner-status';
-  setTimeout(() => {
+  osc.stop(ctx.currentTime + 3.5);
+  osc2.start(ctx.currentTime);
+  osc2.stop(ctx.currentTime + 3);
+
+  _toneOsc = osc;
+
+  document.getElementById('tuner-status').textContent = `Playing ${TUNING_NAMES[state.tunerString]} (${freq.toFixed(1)} Hz)`;
+  document.getElementById('tuner-status').className = 'tuner-status in-tune';
+
+  _toneTimeout = setTimeout(() => {
     const s = document.getElementById('tuner-status');
-    if (s.textContent.startsWith('Playing')) { s.textContent = ''; }
-  }, 2600);
+    if (s.textContent.startsWith('Playing')) { s.textContent = ''; s.className = 'tuner-status'; }
+    _toneOsc = null;
+  }, 3600);
 }
 
 function initTunerCanvas() {
