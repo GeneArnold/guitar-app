@@ -1530,6 +1530,7 @@ async function startPlayAlong() {
   const prog = PROGRESSIONS[pIdx];
   const key = KEYS[kIdx];
   const chords = prog.degrees.map(d => getChordName(key.s, d));
+  const degrees = prog.degrees;
   const beatsPerChord = parseInt(document.getElementById('beats-per-chord').value);
   const metronome = document.getElementById('metro-toggle').checked;
 
@@ -1639,7 +1640,12 @@ async function startPlayAlong() {
       ctx2d.font = `${isCurrent ? 'bold 36px' : '28px'} Georgia, serif`;
       ctx2d.textAlign = 'center';
       ctx2d.textBaseline = 'middle';
-      ctx2d.fillText(chords[ci], x + chordW / 2, H / 2 - 10);
+      ctx2d.fillText(chords[ci], x + chordW / 2, H / 2 - 16);
+
+      // Roman numeral
+      ctx2d.fillStyle = isPast ? 'rgba(255,255,255,0.15)' : isCurrent ? 'rgba(201,151,62,0.9)' : 'rgba(255,255,255,0.3)';
+      ctx2d.font = `${isCurrent ? '15px' : '13px'} system-ui, sans-serif`;
+      ctx2d.fillText(degrees[ci], x + chordW / 2, H / 2 + 10);
 
       // Beat dots
       for (let b = 0; b < beatsPerChord; b++) {
