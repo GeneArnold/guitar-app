@@ -446,6 +446,63 @@ body {
   color: var(--sand);
 }
 
+.play-now-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 10px;
+}
+
+.play-now-bar.visible { display: flex; }
+
+.play-now-info {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.play-now-info span { color: var(--rosewood); }
+
+.play-now-btns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.play-compact-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-compact-btn.pause-btn {
+  background: var(--fret-gold);
+  color: #fff;
+}
+
+.play-compact-btn.stop-btn {
+  background: var(--rosewood);
+  color: #fff;
+}
+
+.play-setup-area.hidden { display: none; }
+
 .metro-toggle {
   display: flex;
   align-items: center;
@@ -955,40 +1012,47 @@ body {
 
   <!-- PLAY ALONG TAB -->
   <section id="play-tab" class="tab-content">
-    <div class="section-title">Play Along</div>
-    <p class="section-sub">Select a progression and key, set the tempo, and play along with the scrolling chords.</p>
-    <div class="play-setup">
-      <div>
-        <label for="play-prog">Progression</label>
-        <select id="play-prog"></select>
+    <div id="play-setup-area" class="play-setup-area">
+      <div class="section-title">Play Along</div>
+      <p class="section-sub">Select a progression and key, set the tempo, and play along with the scrolling chords.</p>
+      <div class="play-setup">
+        <div>
+          <label for="play-prog">Progression</label>
+          <select id="play-prog"></select>
+        </div>
+        <div>
+          <label for="play-key">Key</label>
+          <select id="play-key"></select>
+        </div>
       </div>
-      <div>
-        <label for="play-key">Key</label>
-        <select id="play-key"></select>
+      <div class="play-controls">
+        <div class="bpm-control">
+          <label style="font-size:14px;color:var(--string);font-weight:600;">BPM</label>
+          <input type="range" id="bpm-slider" min="40" max="200" value="80">
+          <input type="number" id="bpm-input" min="40" max="200" value="80" style="width:60px;padding:6px 8px;border:2px solid var(--maple);border-radius:8px;font-size:18px;font-weight:700;font-family:'Courier New',monospace;color:var(--fret-gold);background:var(--card);text-align:center;min-height:40px;">
+        </div>
+      </div>
+      <div class="play-controls">
+        <label class="metro-toggle">
+          <input type="checkbox" id="metro-toggle" checked> Metronome
+        </label>
+        <div>
+          <label style="font-size:13px;color:var(--string);">Beats per chord</label>
+          <select id="beats-per-chord" style="padding:8px;border:2px solid var(--maple);border-radius:8px;background:var(--card);font-size:14px;min-height:36px;">
+            <option value="2">2</option>
+            <option value="4" selected>4</option>
+            <option value="8">8</option>
+          </select>
+        </div>
+        <button class="play-btn start" id="play-start-btn" onclick="startPlayAlong()">Start</button>
       </div>
     </div>
-    <div class="play-controls">
-      <div class="bpm-control">
-        <label style="font-size:14px;color:var(--string);font-weight:600;">BPM</label>
-        <input type="range" id="bpm-slider" min="40" max="200" value="80">
-        <input type="number" id="bpm-input" min="40" max="200" value="80" style="width:60px;padding:6px 8px;border:2px solid var(--maple);border-radius:8px;font-size:18px;font-weight:700;font-family:'Courier New',monospace;color:var(--fret-gold);background:var(--card);text-align:center;min-height:40px;">
+    <div class="play-now-bar" id="play-now-bar">
+      <div class="play-now-info" id="play-now-info"></div>
+      <div class="play-now-btns">
+        <button class="play-compact-btn pause-btn" id="play-pause-btn" onclick="pausePlayAlong()">&#9646;&#9646;</button>
+        <button class="play-compact-btn stop-btn" id="play-stop-btn" onclick="stopPlayAlong()">&#9632;</button>
       </div>
-    </div>
-    <div class="play-controls">
-      <label class="metro-toggle">
-        <input type="checkbox" id="metro-toggle" checked> Metronome
-      </label>
-      <div>
-        <label style="font-size:13px;color:var(--string);">Beats per chord</label>
-        <select id="beats-per-chord" style="padding:8px;border:2px solid var(--maple);border-radius:8px;background:var(--card);font-size:14px;min-height:36px;">
-          <option value="2">2</option>
-          <option value="4" selected>4</option>
-          <option value="8">8</option>
-        </select>
-      </div>
-      <button class="play-btn start" id="play-start-btn" onclick="startPlayAlong()">Start</button>
-      <button class="play-btn stop" id="play-pause-btn" onclick="pausePlayAlong()" style="display:none;padding:14px 20px;">Pause</button>
-      <button class="play-btn stop" id="play-stop-btn" onclick="stopPlayAlong()" style="display:none;padding:14px 20px;">Stop</button>
     </div>
     <div class="play-pos-row" id="play-pos-row" style="display:none;"></div>
     <div class="play-diagram" id="play-diagram" style="display:none;"></div>
@@ -1740,9 +1804,15 @@ async function startPlayAlong() {
   // Pre-seed next chord's random position so preview shows it
   if (state.playRandomPos) getPosForChord(1);
 
-  document.getElementById('play-start-btn').style.display = 'none';
-  document.getElementById('play-pause-btn').style.display = '';
-  document.getElementById('play-stop-btn').style.display = '';
+  // Collapse setup, show compact now-bar
+  document.getElementById('play-setup-area').classList.add('hidden');
+  const nowBar = document.getElementById('play-now-bar');
+  nowBar.classList.add('visible');
+  const keyName = key.name;
+  document.getElementById('play-now-info').innerHTML =
+    `<span>${prog.name}</span> in <span>${keyName}</span> &middot; ${state.bpm} BPM`;
+  document.getElementById('play-pause-btn').innerHTML = '&#9646;&#9646;';
+  document.getElementById('play-pause-btn').onclick = pausePlayAlong;
 
   document.getElementById('play-idle').style.display = 'none';
   document.getElementById('play-stats').style.display = 'flex';
@@ -1910,19 +1980,16 @@ function pausePlayAlong() {
   if (state.playRaf) cancelAnimationFrame(state.playRaf);
   state.playRaf = null;
   const pauseBtn = document.getElementById('play-pause-btn');
-  pauseBtn.textContent = 'Resume';
+  pauseBtn.innerHTML = '&#9654;';
   pauseBtn.onclick = resumePlayAlong;
 }
 
 function resumePlayAlong() {
   if (!state.playPaused) return;
-  state.playing = true;
   state.playPaused = false;
   const pauseBtn = document.getElementById('play-pause-btn');
-  pauseBtn.textContent = 'Pause';
+  pauseBtn.innerHTML = '&#9646;&#9646;';
   pauseBtn.onclick = pausePlayAlong;
-  // Restart will be handled by re-calling startPlayAlong with current settings
-  // For simplicity, just restart fresh
   stopPlayAlong();
   startPlayAlong();
 }
@@ -1934,12 +2001,8 @@ function stopPlayAlong() {
   if (state.playRaf) cancelAnimationFrame(state.playRaf);
   state.playInterval = null;
   state.playRaf = null;
-  document.getElementById('play-start-btn').style.display = '';
-  document.getElementById('play-pause-btn').style.display = 'none';
-  document.getElementById('play-stop-btn').style.display = 'none';
-  const pauseBtn = document.getElementById('play-pause-btn');
-  pauseBtn.textContent = 'Pause';
-  pauseBtn.onclick = pausePlayAlong;
+  document.getElementById('play-setup-area').classList.remove('hidden');
+  document.getElementById('play-now-bar').classList.remove('visible');
   document.getElementById('play-idle').style.display = 'flex';
   document.getElementById('play-stats').style.display = 'none';
   document.getElementById('play-pos-row').style.display = 'none';
