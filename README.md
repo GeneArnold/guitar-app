@@ -23,7 +23,7 @@ A beautiful, mobile-first web app for learning guitar chord progressions. No fra
 
 <p align="center">
   <a href="https://youtube.com/shorts/zFDmzWXaeF4">
-    <img src="https://img.shields.io/badge/▶_Watch-Demo Video-8B3A2F?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo Video">
+    <img src="https://img.shields.io/badge/Watch-Demo_Video-8B3A2F?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo Video">
   </a>
 </p>
 
