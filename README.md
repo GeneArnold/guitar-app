@@ -10,11 +10,21 @@
 A beautiful, mobile-first web app for learning guitar chord progressions. No frameworks, no build tools, no dependencies — just one self-contained HTML file with everything you need to learn, practice, and play along with classic chord progressions.
 
 <p align="center">
-  <img src="screenshots/phone-learn.jpg" width="220" alt="Learn tab on phone">
-  &nbsp;&nbsp;
-  <img src="screenshots/phone-play-along.jpg" width="220" alt="Play Along with highway and chord diagrams">
-  &nbsp;&nbsp;
-  <img src="screenshots/phone-play-setup.jpg" width="220" alt="Play Along setup on phone">
+  <img src="screenshots/phone-learn.png" width="180" alt="Learn tab">
+  &nbsp;
+  <img src="screenshots/phone-songs.png" width="180" alt="Songs tab">
+  &nbsp;
+  <img src="screenshots/phone-chords.png" width="180" alt="Chord diagrams">
+  &nbsp;
+  <img src="screenshots/phone-play-along.png" width="180" alt="Play Along with highway">
+  &nbsp;
+  <img src="screenshots/phone-tuner.png" width="180" alt="Guitar Tuner">
+</p>
+
+<p align="center">
+  <a href="screenshots/demo.mp4">
+    <img src="https://img.shields.io/badge/Watch-Demo Video-8B3A2F?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo Video">
+  </a>
 </p>
 
 ## Why This Exists
