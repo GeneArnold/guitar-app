@@ -129,10 +129,6 @@ The app implements chord progression theory algorithmically:
 - **Barre chord generation** uses E-shape and A-shape barre patterns with root transposition
 - **Position scoring** groups voicings by fret proximity and penalizes barres for beginner mode
 
-## Credits
-
-Chord progression patterns and music theory concepts from the *Progressions: Classics* series by Jeffrey Kunde (The Guitar Institute).
-
 ## License
 
 MIT
